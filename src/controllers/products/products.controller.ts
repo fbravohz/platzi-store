@@ -6,28 +6,30 @@ import {
   Param,
   Post,
   Put,
-  Query,
+  // Query,
   HttpStatus,
   HttpCode,
   Res,
+  ParseIntPipe,
 } from '@nestjs/common';
-
-import { Response } from 'express'
+import { Response } from 'express';
+import { ProductsService } from 'src/services/products/products.service';
 
 @Controller('products')
 export class ProductsController {
+  constructor(private productsService: ProductsService) {}
   // @Get('products/:id')
   // getProduct(@Param() params: any) {
   //   return `product ${params.id}`;
   // }
 
   @Get()
-  getMany(
-    @Query('limit') limit = 100,
-    @Query('offset') offset: number,
-    @Query('brand') brand: string,
-  ) {
-    return `product limit: ${limit} offset: ${offset} brand: ${brand}`;
+  getMany() {
+    // @Query('brand') brand: string, // @Query('offset') offset: number, // @Query('limit') limit = 100,
+    // return `product limit: ${limit} offset: ${offset} brand: ${brand}`;
+    return {
+      success: this.productsService.findAll(),
+    };
   }
 
   //RUTAS NO DINAMICAS VAN PRIMERO QUE LAS DINAMICAS
@@ -40,25 +42,24 @@ export class ProductsController {
   @HttpCode(HttpStatus.ACCEPTED)
   getUnique(
     @Res() response: Response,
-    @Param('productId') productId: number | string,
+    @Param('productId', ParseIntPipe) productId: number,
   ) {
+    const one = this.productsService.findOne(+productId);
     response.status(200).send({
-      productId,
+      success: one,
     });
   }
 
   @Post()
   create(@Body() payload: any) {
-    console.log(payload);
+    const res = this.productsService.create(payload);
     return {
-      message: 'accion de crear',
-      payload: payload,
+      res,
     };
   }
 
   @Post('nigga')
   createNigga(@Body('nigga') nigga: string) {
-    console.log(nigga);
     return {
       message: 'accion de crear',
       nigga,
@@ -66,17 +67,15 @@ export class ProductsController {
   }
 
   @Put(':id')
-  update(@Param('id') id: number, @Body() payload: any) {
+  update(@Param('id') id: string, @Body() payload: any) {
+    const resp = this.productsService.update(+id, payload);
     return {
-      id: id,
-      body: payload,
+      resp,
     };
   }
 
   @Delete(':id')
-  delete(@Param('id') id: number) {
-    return {
-      id: id,
-    };
+  delete(@Param('id') id: string) {
+    return this.productsService.delete(+id);
   }
 }
